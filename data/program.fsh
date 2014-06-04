@@ -1,3 +1,6 @@
+/* Barrel Distortion & Chromatic abberation shader from
+ * https://www.shadertoy.com/view/XssGz8
+ */
 #ifdef GL_ES
 precision highp float;
 #endif
