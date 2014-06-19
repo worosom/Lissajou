@@ -1,3 +1,7 @@
+/* Based on
+ * Barrel Distortion & Chromatic abberation shader from
+ * https://www.shadertoy.com/view/XssGz8
+ */
 #ifdef GL_ES
 precision highp float;
 #endif
@@ -14,7 +18,7 @@ varying vec4 vertColor;
 varying vec4 gl_FragCoord;
 
 vec2 barrelDistortion(vec2 coord, float amt) {
-	vec2 cc = coord - 0.5;
+	vec2 cc = (coord -.5);
 	float dist = dot(cc, cc);
 	return coord + cc * dist * amt;
 }
@@ -46,11 +50,11 @@ const int num_iter = 3;
 const float reci_num_iter_f = 1.0 / float(num_iter);
 
 void main()
-{	
-	vec2 uv=(gl_FragCoord.st/resolution.xy);
+{
+	vec2 uv=(gl_FragCoord.st/resolution.xy*.9) + .05;
 
 	vec3 sumcol = vec3(0.0);
-	vec3 sumw = vec3(0.0);	
+	vec3 sumw = vec3(0.0);
 	for ( int i=0; i<num_iter;++i )
 	{
 		float t = float(i) * reci_num_iter_f;
@@ -58,7 +62,6 @@ void main()
 		sumw += w;
 		sumcol += w * texture2D( texture, barrelDistortion(uv, max_distort*t ) ).rgb;
 	}
-		
+
 	gl_FragColor = vec4(sumcol.rgb / sumw, 1.0);
 }
-
