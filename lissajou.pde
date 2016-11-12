@@ -1,10 +1,9 @@
-import processing.core.PApplet;
-import processing.core.PImage;
-import processing.opengl.PShader;
 import ddf.minim.AudioInput;
 import ddf.minim.Minim;
 
+public static boolean INVERT_COLORS = true; 
 
+public static float SIZE = 2.f;
 public static int BUFFERSIZE = 512;
 public static float SAMPLERATE = 44100;
 public static int BITDEPTH = 16;
@@ -16,75 +15,60 @@ float buffer[][] = new float[2][BUFFERSIZE];
 float buffer1[][] = new float[2][BUFFERSIZE];
 float volume;
 
-PShader shad;
-PShader bgshad;
-boolean drawshad = false;
-
-PImage noCurse;
-
 float scale;
 
 public void setup() {
-  size(displayWidth, displayHeight, P2D);
+  fullScreen();
   hint(ENABLE_STROKE_PURE);
   background(255);
   smooth(8);
 
-  scale = width / 1920.f;
+  scale = width;
   minim = new Minim(this);
   in = minim.getLineIn(Minim.STEREO, BUFFERSIZE, SAMPLERATE, BITDEPTH);
 
-  shad = loadShader("program.fsh");
-  bgshad = loadShader("bgshader.fsh");
-  bgshad.set("resolution", (float)width, (float)height);
-
-  noCurse = loadImage("noCursor.png");
-  cursor(noCurse);
+  noCursor();
   shapeMode(CENTER);
   strokeJoin(ROUND);
   strokeCap(ROUND);
   noFill();
-  stroke(0);
+  stroke(INVERT_COLORS ? 0 : 255);
 }
 
 public void update() {
   volume = ease(volume, in.mix.level(), .1);
-  
+
   buffer[0] = in.left.toArray();
   buffer[1] = in.right.toArray();
 
-  buffer1[0] = ease(buffer1[0], buffer[0], (in.mix.level()) / 6.f, .76f);
-  buffer1[1] = ease(buffer1[1], buffer[1], (in.mix.level()) / 6.f, .76f);
+  // fraction of input volume
+  float vf = 6.f;
+  // easing constant
+  float ec = .76f;
+  buffer1[0] = ease(buffer1[0], buffer[0], in.mix.level() / vf, ec);
+  buffer1[1] = ease(buffer1[1], buffer[1], in.mix.level() / vf, ec);
 }
 
 public void draw() {
   update();
-  if (!drawshad)
-    background(255);
-  else {
-    bgshad.set("volume", volume);
-    bgshad.set("texture", g);
-    filter(bgshad);
-  }
+  background(INVERT_COLORS ? 255 : 0);
 
   translate(width / 2, height / 2);
   rotate(-PI / 4.f);
 
   beginShape();
   for (int i = 0; i < BUFFERSIZE; i++) {
-    strokeWeight(.5f + abs(buffer[1][i] - buffer[0][i]) * 10.f);
-    curveVertex(buffer1[1][i] * 4500.f * (scale - volume / 2.f), buffer1[0][i] * 4500.f * (scale - volume / 2.f));
+    float weight = .5f;
+    weight += abs(buffer[1][i] - buffer[0][i]) * 10.f;
+    strokeWeight(weight);
+    float r = SIZE * (scale - volume / 2.f);
+    float x = buffer1[1][i] * r;
+    float y = buffer1[0][i] * r;
+    curveVertex(x, y);
   }
   endShape();
 
-  if (drawshad) {
-    shad.set("resolution", (float) width, (float) height);
-    shad.set("texture", g);
-    shad.set("max_distort", in.mix.level() * 2.2f);
-    filter(shad);
-  }
-
-  frame.setTitle((int)frameRate + " fps");
+  // surface.setTitle((int)frameRate + " fps");
 }
 
 public float[] ease(float[] a, float[] b, float offset, float mult) {
@@ -93,11 +77,11 @@ public float[] ease(float[] a, float[] b, float offset, float mult) {
   for (int i = 0; i < size; i++) {
     float rb;
     if (i + 1 < BUFFERSIZE) {
-      // the bigger the difference between the current value in the buffer
+      // the bigger the difference between the current value
       // and the next one is, the higher rb is.
       rb = abs(b[i] - b[i + 1]);
-    } else
-      rb = abs(b[i] - b[i - 1]);
+    } else // assume periodicity
+    rb = abs(b[i] - b[0]);
 
     rb *= mult;
     rb += offset;
@@ -107,19 +91,8 @@ public float[] ease(float[] a, float[] b, float offset, float mult) {
 }
 
 public float ease(float a, float b, float r) {
-  if(b > a)
+  if (b > a)
     return b;
   float d = b - a;
-  return a + (b - a) * r;
+  return a + d * r;
 }
-
-public void mouseMoved() {
-  cursor(noCurse);
-}
-
-public void keyReleased() {
-  if (key == 's' || key == 'S') {
-    drawshad = !drawshad;
-  }
-}
-
