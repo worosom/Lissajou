@@ -3,6 +3,6 @@ Lissajous Figure Audio Visualization
 
 Uses the systems audio input to draw a Lissajous-pattern inspired audio visualization.
 
-Requires the Processing IDE which you can get at https://processing.org
+Editing the source requires you to download the Processing IDE which you can do at https://processing.org
 
-![Lissajous GIF](https://github.com/worosom/Lissajou/raw/master/lissajou.gif)sdaf
+![Lissajous GIF](https://github.com/worosom/Lissajou/raw/master/lissajou.gif)
